@@ -13,7 +13,7 @@ If you would like to complie yourself. You can do it with pyinstaller and run th
 ```sh
 git clone https://github.com/NathanZC/discord_tool.git
 cd discord_tool
-pip install requiremnts.txt
+pip install -r requirements.txt
 ```
 
 And then run this command to compile it (make sure you have pyinstaller installed):  
