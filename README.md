@@ -10,10 +10,11 @@ This is a custom tool for discord with a gui used for easily deleting open dms, 
 
 # Complie
 If you would like to complie yourself. You can do it with pyinstaller and run this command once in the directory. To do this clone the dir with:  
-\```sh
+```sh
 git clone https://github.com/NathanZC/discord_tool.git
 cd discord_tool
-\```
+pip install requiremnts.txt
+```
 
 And then run this command to compile it (make sure you have pyinstaller installed):  
 ```pyinstaller --onedir --windowed --debug=all --add-data "test_images;test_images" --name DiscordTool gui.py```
