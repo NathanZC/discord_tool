@@ -23,6 +23,6 @@ If you would like the full program its here:
 [DiscordToolv1.zip](https://github.com/user-attachments/files/16015570/DiscordToolv1.zip)
 
 
-#Preview  
+# Preview  
 ![thingggg](https://github.com/NathanZC/discord_tool/assets/58007916/bafac0ad-67da-402d-89d1-571ba14a47d7)
 
