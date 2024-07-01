@@ -4,12 +4,12 @@ This is a custom tool for discord with a gui used for easily deleting open dms, 
 # Features
 * User Friendly GUI to easily navigate different aspects of a users account.  
 * custom delete delay between messages.  
-* ability to open closed dms from the discord data pakage and see which ones are already open.  
+* ability to open closed dms from the discord data package and see which ones are already open.  
 * display and choose to delete all messages from multiple servers at once.  
 * Get and Display all sever and dm messages counts  
 
-# Complie
-If you would like to complie yourself. You can do it with pyinstaller and run this command once in the directory. To do this clone the dir with:  
+# Compile
+If you would like to compile yourself. You can do it with pyinstaller and run this command once in the directory. To do this clone the dir with:  
 ```git clone https://github.com/NathanZC/discord_tool.git```  
 And then run this command to compile it (make sure you have pyinstaller installed):  
 ```pyinstaller --onedir --windowed --debug=all --add-data "test_images;test_images" --name DiscordTool gui.py```
