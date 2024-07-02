@@ -306,8 +306,8 @@ def get_and_del_all_messages_from_channel_search(auth, channel_id, delay, author
                         seen.add(message['id'])
                         offset += 1
                 else:
-                    print("errrrrm this its going over the same message more than once for some reason: ", message['id'])
-
+                    print("errrrrm this its going over the same message more than once for some reason: ",
+                          message['id'])
 
             # print(f"found {len(to_delete)} messages to delete on page")
             if len(to_delete) > 0:
@@ -350,15 +350,15 @@ def get_and_del_all_messages_from_channel_search(auth, channel_id, delay, author
                             self.update_progress()
                             seen.add(message_id)
                             offset += 1
+                            break
                             # print("issue deleting message so skipping it!")
                 time.sleep(delay())  # Call delay as a function to fetch updated value
-            print("offset: ", offset, "delete message count: ", delete_messages_count, "total: ", total)
-            print(seen)
+            print("offset: ", offset, "len of seen: ", len(seen), "total: ", total)
             if len(seen) >= total:
                 self.append_log("finished DM")
                 break
-        self.append_log(f'searching next page for messages after {delay() * 3 + 15}s delay')
-        time.sleep(delay() * 3 + 15)  # Call delay as a function to fetch updated value
+        self.append_log(f'searching next page for messages after {delay() * 3 + 20}s delay')
+        time.sleep(delay() * 3 + 20)  # Call delay as a function to fetch updated value
 
 
 def get_user_data(auth):

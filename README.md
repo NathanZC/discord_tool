@@ -17,7 +17,10 @@ pip install -r requirements.txt
 ```
 
 And then run this command to compile it (make sure you have pyinstaller installed):  
-```pyinstaller --onedir --windowed --debug=all --add-data "test_images;test_images" --name DiscordTool gui.py```
+```pyinstaller --onedir --windowed --debug=all --add-data "test_images;test_images" --name DiscordTool gui.py```  
+
+If you would just like to run the program:  
+```python gui.py```
 
 If you would like the full program its here:
 [DiscordToolv1.zip](https://github.com/user-attachments/files/16015570/DiscordToolv1.zip)
