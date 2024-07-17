@@ -36,8 +36,6 @@ class ForthFrame(customtkinter.CTkFrame):
         self.grid_columnconfigure(3, weight=1)
         self.grid_columnconfigure(4, weight=3)
 
-        self.file_input_button = customtkinter.CTkButton(self, text="Input File", command=self.open_file_dialog)
-        self.file_input_button.grid(row=0, column=3, padx=10, pady=10, sticky="s")
         # Add ScrollableLabelButtonFrame
         self.scrollable_frame = ScrollableLabelButtonFrame2(master=self, corner_radius=0,
                                                             toggle_command=self.handle_toggle, logger=self.append_log)
@@ -85,6 +83,51 @@ class ForthFrame(customtkinter.CTkFrame):
         self.append_log("To use this, you should request your data from discord and then go to "
                         "package>messages>index.json file and input as the input file. This will allow you to re-open "
                         "all closed dms and delete them.")
+
+        input_frame = customtkinter.CTkFrame(self)
+        input_frame.grid(row=1, column=3, rowspan=1, padx=10, pady=10, sticky="nsew")
+        input_frame.grid_rowconfigure(0, weight=0)
+        input_frame.grid_rowconfigure(1, weight=0)
+        input_frame.grid_columnconfigure(0, weight=1)
+
+        # Add a label above the textbox
+        label_text = "Use this to open a DM without having to send a friend request. Input user ID:"
+        label = customtkinter.CTkLabel(input_frame, text=label_text, wraplength=200)
+        label.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="nsew")
+
+        self.input_text = customtkinter.CTkTextbox(input_frame, wrap="word", height=10)
+        self.input_text.grid(row=1, column=0, padx=10, pady=(10, 0), sticky="nsew")
+        self.input_text.bind("<KeyRelease>", self.check_text_input)
+
+        self.submit_button = customtkinter.CTkButton(input_frame, text="Open DM", state="disabled",
+                                                     command=self.open_dm_from_input)
+        self.submit_button.grid(row=2, column=0, padx=10, pady=(10, 10), sticky="n")
+
+        self.file_input_button = customtkinter.CTkButton(self, text="Input File", command=self.open_file_dialog)
+        self.file_input_button.grid(row=0, column=3, padx=10, pady=10, sticky="s")
+
+    def check_text_input(self, event=None):
+        text = self.input_text.get("1.0", "end-1c")
+        if text.strip():
+            self.submit_button.configure(state="normal")
+        else:
+            self.submit_button.configure(state="disabled")
+
+    def open_dm_from_input(self):
+        text = self.input_text.get("1.0", "end-1c").strip()
+        print(text)
+        if text:
+            self.append_log(f"Attempting to open DM with input: {text}")
+            r = open_dm_with_userid(text, self.auth_key)
+            if 'recipients' in r:
+                self.submit_button.configure(state="disabled")
+                self.input_text.delete("1.0", "end")  # Clear the input text box
+                self.append_log(f"Successfully opened dm: {text}")
+
+            else:
+                print(self.append_log(f"Failed to Open DM: {r.content}"))
+            # Add your logic here to handle opening the DM based on the input text
+            # Example: self.open_dm_logic(text)
 
     def open_file_dialog(self):
         # Open a file dialog and handle the file
@@ -254,7 +297,6 @@ class ForthFrame(customtkinter.CTkFrame):
 
         self.servers_loaded = True
         self.get_counts_button.configure(state="normal")
-
 
     def format_jobs(self):
         formatted_jobs = [

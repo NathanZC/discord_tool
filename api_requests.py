@@ -38,7 +38,10 @@ def open_dm_with_userid(user_id, auth):
         return recipients
     else:
         print('Request failed with status code:', response.status_code)
-        return None
+        return response
+
+
+
 
 
 def get_all_open_dms(auth):
