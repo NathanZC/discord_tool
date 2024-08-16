@@ -63,14 +63,14 @@ class HomeFrame(customtkinter.CTkFrame):
             self.master.update_button_states("home", False)  # Keep other frames disabled
 
     def save_auth_key_to_file(self, auth_key):
-        file_path = "./test_images/staticinfo.txt"
+        file_path = "./static_info/staticinfo.txt"
         os.makedirs(os.path.dirname(file_path), exist_ok=True)  # Ensure directory exists
         with open(file_path, 'w') as file:
             print("logging")
             file.write(auth_key)
 
     def load_auth_key_from_file(self):
-        file_path = "./test_images/staticinfo.txt"
+        file_path = "./static_info/staticinfo.txt"
         if os.path.exists(file_path):
             with open(file_path, 'r') as file:
                 auth_key = file.read().strip()
