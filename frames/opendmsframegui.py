@@ -259,7 +259,7 @@ class SecondFrame(customtkinter.CTkFrame):
 
     def update_data(self, auth_key, open_dms, user_data):
         self.auth_key = auth_key
-        self.open_dms = open_dms
+        self.open_dms = get_all_open_dms(auth_key)
         self.user_data = user_data
 
     def id_to_name(self, id):
@@ -274,3 +274,21 @@ class SecondFrame(customtkinter.CTkFrame):
                         s.append(f'{r['username']}, ')
                     return ''.join(s)
         return None
+
+    def reset(self):
+        # Reset the jobs list
+        self.jobs.clear()
+
+        # Reset the progress bar
+        self.reset_progress_bar(100)
+
+        # Clear the log text box
+        self.log_textbox.delete(1.0, customtkinter.END)
+
+        # Reset buttons and other UI elements
+        self.get_counts_button.configure(state="disabled")
+        self.new_button.configure(text="Start", state="normal")
+        self.scrollable_frame.clear_items()  # If you have a method to clear the scrollable frame
+
+        self.is_running = False
+        self.is_getting_message_counts = False

@@ -85,6 +85,7 @@ class ThirdFrame(customtkinter.CTkFrame):
         self.append_log("Welcome To Discord Tool. Select a server to delete all messages")
 
     def handle_toggle(self, dm, is_enabled):
+        print("is_enabled: ", is_enabled)
         if is_enabled:
             # Queue the job
             self.queue_job_event(dm)
@@ -229,6 +230,8 @@ class ThirdFrame(customtkinter.CTkFrame):
         self.servers_loaded = True
         if not self.is_running:
             self.get_counts_button.configure(state="normal")
+
+
 
     def get_server_icon_url(self, server):
         if server['icon']:

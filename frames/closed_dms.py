@@ -1,9 +1,4 @@
 import threading
-
-from io import BytesIO
-
-from customtkinter import CTkImage
-
 from frames.gui_components import ScrollableLabelButtonFrame2
 import tkinter.filedialog as fd
 from helpers import *
@@ -93,25 +88,83 @@ class ForthFrame(customtkinter.CTkFrame):
         # Add a label above the textbox
         label_text = "Use this to open a DM without having to send a friend request. Input user ID:"
         label = customtkinter.CTkLabel(input_frame, text=label_text, wraplength=200)
-        label.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="nsew")
+        label.grid(row=8, column=0, padx=10, pady=(10, 0), sticky="nsew")
 
         self.input_text = customtkinter.CTkTextbox(input_frame, wrap="word", height=10)
-        self.input_text.grid(row=1, column=0, padx=10, pady=(10, 0), sticky="nsew")
+        self.input_text.grid(row=9, column=0, padx=10, pady=(10, 0), sticky="nsew")
         self.input_text.bind("<KeyRelease>", self.check_text_input)
 
-        self.submit_button = customtkinter.CTkButton(input_frame, text="Open DM", state="disabled",
+        self.submit_button_by_id = customtkinter.CTkButton(input_frame, text="Open DM", state="disabled",
                                                      command=self.open_dm_from_input)
-        self.submit_button.grid(row=2, column=0, padx=10, pady=(10, 10), sticky="n")
+        self.submit_button_by_id.grid(row=11, column=0, padx=10, pady=(10, 10), sticky="n")
 
+        self.open_all_dms_button = customtkinter.CTkButton(input_frame, text="Open All Dms", state="disabled",
+                                                     command=self.open_all_dms)
+        self.open_all_dms_button.grid(row=7, column=0, padx=10, pady=(10, 10), sticky="n")
+        label_text = "(Max 100 open at once)"
+        label = customtkinter.CTkLabel(input_frame, text=label_text, wraplength=200)
+        label.grid(row=6, column=0, padx=10, pady=(10, 0), sticky="nsew")
+
+        # Add start index input
+        start_index_label = customtkinter.CTkLabel(input_frame, text="Start Index:")
+        start_index_label.grid(row=1, column=0, padx=10, pady=(10, 0), sticky="nsew")
+
+        self.start_index_input = customtkinter.CTkTextbox(input_frame, wrap="word", height=10)
+        self.start_index_input.grid(row=2, column=0, padx=10, pady=(10, 0), sticky="nsew")
+
+        # Add end index input
+        end_index_label = customtkinter.CTkLabel(input_frame, text="End Index:")
+        end_index_label.grid(row=3, column=0, padx=10, pady=(10, 0), sticky="nsew")
+
+        self.end_index_input = customtkinter.CTkTextbox(input_frame, wrap="word", height=10)
+        self.end_index_input.grid(row=4, column=0, padx=10, pady=(10, 0), sticky="nsew")
+
+        # Update the position of the other elements
+        self.submit_button_by_id.grid(row=10, column=0, padx=10, pady=(10, 10), sticky="n")
+        self.open_all_dms_button.grid(row=5, column=0, padx=10, pady=(10, 10), sticky="n")
+        label_text = "Batch Open Dms (delay included)"
+        label = customtkinter.CTkLabel(input_frame, text=label_text, wraplength=200)
+        label.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="nsew")
         self.file_input_button = customtkinter.CTkButton(self, text="Input File", command=self.open_file_dialog)
         self.file_input_button.grid(row=0, column=3, padx=10, pady=10, sticky="s")
 
     def check_text_input(self, event=None):
         text = self.input_text.get("1.0", "end-1c")
         if text.strip():
-            self.submit_button.configure(state="normal")
+            self.submit_button_by_id.configure(state="normal")
         else:
-            self.submit_button.configure(state="disabled")
+            self.submit_button_by_id.configure(state="disabled")
+
+    def open_all_dms_threaded(self):
+        """Thread target function for opening DMs."""
+        try:
+            start_index = int(self.start_index_input.get("1.0", "end").strip()) - 1
+            end_index = int(self.end_index_input.get("1.0", "end").strip()) - 1
+        except ValueError:
+            self.append_log("Invalid indices. Please enter valid integers.")
+            return
+        if end_index - start_index > 100:
+            self.append_log("Invalid indices. Discord has a 100 open dm limit max")
+            return
+        if start_index > end_index:
+            self.append_log("Invalid indices. start must be < end")
+            return
+
+        dms = list(self.scrollable_frame.dms_widgets.items())[start_index:end_index + 1]
+        print(dms)
+        for key, value in dms:
+            if key not in self.scrollable_frame.open_dms:
+                self.scrollable_frame.open_dm({'id': key, 'description': value['label']._text})
+            else:
+                self.append_log(f"Already open {key} with description: {value['label']._text}")
+                print(f"Already opened {key} with description: {value['label']._text}")
+            time.sleep(self.slider_delay)
+
+    def open_all_dms(self):
+        """Starts the open_all_dms_threaded function in a separate thread."""
+        threading.Thread(target=self.open_all_dms_threaded, daemon=True).start()
+
+
 
     def open_dm_from_input(self):
         text = self.input_text.get("1.0", "end-1c").strip()
@@ -120,7 +173,7 @@ class ForthFrame(customtkinter.CTkFrame):
             self.append_log(f"Attempting to open DM with input: {text}")
             r = open_dm_with_userid(text, self.auth_key)
             if 'recipients' in r:
-                self.submit_button.configure(state="disabled")
+                self.submit_button_by_id.configure(state="disabled")
                 self.input_text.delete("1.0", "end")  # Clear the input text box
                 self.append_log(f"Successfully opened dm: {text}")
 
@@ -146,6 +199,7 @@ class ForthFrame(customtkinter.CTkFrame):
 
     def handle_toggle(self, dm, is_enabled):
         item_text = f"Channel: {dm['description']}"
+        print("is enabled: ", is_enabled, "dm: ", dm)
         if is_enabled:
             # Queue the job
             self.queue_job_event(dm, item_text)
@@ -239,6 +293,7 @@ class ForthFrame(customtkinter.CTkFrame):
                 delay=lambda: self.slider_delay,  # Pass delay as a callable to get the updated value
                 self=self,
                 is_running=lambda: self.is_running,
+                channel_name=job[1],
                 is_guild=False
             )
         if self.servers_loaded:
@@ -297,6 +352,7 @@ class ForthFrame(customtkinter.CTkFrame):
 
         self.servers_loaded = True
         self.get_counts_button.configure(state="normal")
+        self.open_all_dms_button.configure(state="normal")
 
     def format_jobs(self):
         formatted_jobs = [

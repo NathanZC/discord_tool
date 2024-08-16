@@ -45,6 +45,7 @@ class App(customtkinter.CTk):
         self.select_frame_by_name("home")
 
     def frame_2_button_event(self):
+        self.second_frame.reset()
         self.select_frame_by_name("frame_2")
         self.second_frame.update_data(self.auth_key, self.open_dms, self.user_data)
         self.second_frame.dms_loaded = False
@@ -198,7 +199,7 @@ class App(customtkinter.CTk):
 
     def update_data(self, auth_key, open_dms, user_data, servers):
         self.auth_key = auth_key
-        self.open_dms = open_dms
+        self.open_dms = get_all_open_dms(auth_key)
         self.user_data = user_data
         self.servers = servers
 

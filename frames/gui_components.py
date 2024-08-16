@@ -80,6 +80,22 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
             widgets['total_label'].configure(text=f"Total messages: {total_messages}")
             widgets['sent_label'].configure(text=f"Messages sent: {sent_messages}")
 
+    def clear_items(self):
+        # Iterate through the widgets and destroy them
+        for dm_id in list(self.dms_widgets.keys()):
+            widgets = self.dms_widgets.pop(dm_id)
+            widgets['label'].destroy()
+            widgets['total_label'].destroy()
+            widgets['sent_label'].destroy()
+            widgets['checkbox'].destroy()
+
+        # Clear the lists and dictionary
+        self.label_list.clear()
+        self.total_message_labels.clear()
+        self.sent_message_labels.clear()
+        self.checkbox_list.clear()
+        self.dms_widgets.clear()
+
 
 class ScrollableLabelButtonFrame2(customtkinter.CTkScrollableFrame):
     def __init__(self, master, toggle_command=None, logger=None, open_dms=None, **kwargs):
@@ -108,7 +124,7 @@ class ScrollableLabelButtonFrame2(customtkinter.CTkScrollableFrame):
                                                      state="normal" if channel_id not in self.open_dms else "disabled")
 
             if self.toggle_command is not None:
-                checkbox.configure(command=lambda: self.on_toggle_state(dm, checkbox))
+                checkbox.configure(command=lambda: self.on_toggle_state(dm, checkbox.get()))
 
             # Grid placement
             row_index = len(self.dms_widgets)
@@ -144,9 +160,10 @@ class ScrollableLabelButtonFrame2(customtkinter.CTkScrollableFrame):
         if button:
             button.configure(state="disabled")
             print(f"Opening DM for ID: {channel_id} with description: {dm['description']}")
+            u_id = get_userid_from_channelid(channel_id, self.auth)
+            response = open_dm_with_userid(u_id, self.auth)
+            self.open_dms.append(channel_id)
             if self.logger:
-                u_id = get_userid_from_channelid(channel_id, self.auth)
-                response = open_dm_with_userid(u_id, self.auth)
                 if len(response['recipients']) == 1:
                     self.logger(f"Opened dm with {response['recipients'][0]['username']}")
                 else:
@@ -179,3 +196,11 @@ class ScrollableLabelButtonFrame2(customtkinter.CTkScrollableFrame):
 
     def item_exists(self, channel_id):
         return channel_id in self.dms_widgets
+
+    def clear(self):
+        for channel_id in list(self.dms_widgets.keys()):
+            self.remove_item(channel_id)
+
+    def get_dms_sorted(self):
+        sorted_items = sorted(self.dms_widgets.items(), key=lambda x: int(x[1]['label'].cget("text").split(".")[0]))
+        return sorted_items

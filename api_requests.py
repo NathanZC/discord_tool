@@ -284,6 +284,7 @@ def get_and_del_all_messages_from_channel_search(auth, channel_id, delay, author
     offset = 0
     total = 0
     delete_messages_count = 0
+    count_stuck = 0
     print("here")
     while True:
         if page == 1:
@@ -295,6 +296,8 @@ def get_and_del_all_messages_from_channel_search(auth, channel_id, delay, author
         if data is None:
             # print("Rate limited, sleeping 10 seconds")
             time.sleep(10)
+            print(f'hit here: {count_stuck}')
+            count_stuck += 1
         else:
             to_delete = []
             messages = data
@@ -360,8 +363,8 @@ def get_and_del_all_messages_from_channel_search(auth, channel_id, delay, author
             if len(seen) >= total:
                 self.append_log("finished DM")
                 break
-        self.append_log(f'searching next page for messages after {delay() * 3 + 20}s delay')
-        time.sleep(delay() * 3 + 20)  # Call delay as a function to fetch updated value
+        self.append_log(f'searching next page for messages after {delay() * 3 + 25}s delay')
+        time.sleep(delay() * 3 + 25)  # Call delay as a function to fetch updated value
 
 
 def get_user_data(auth):
