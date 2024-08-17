@@ -41,9 +41,6 @@ def open_dm_with_userid(user_id, auth):
         return response
 
 
-
-
-
 def get_all_open_dms(auth):
     url = f'https://discord.com/api/v9/users/@me/channels'
     headers = {
@@ -285,7 +282,6 @@ def get_and_del_all_messages_from_channel_search(auth, channel_id, delay, author
     total = 0
     delete_messages_count = 0
     count_stuck = 0
-    print("here")
     while True:
         if page == 1:
             data, total = search_message_from_channel(auth, channel_id, author_id, offset, self=self, reset_bar=True,
@@ -397,3 +393,19 @@ def get_user_guilds(auth):
 
     guilds = get_guilds()
     return guilds
+
+
+def close_dm(job, auth, log):
+    headers = {
+        "Authorization": f"{auth}",  # If using a user token (less recommended)
+    }
+    url = f"https://discord.com/api/v9/channels/{job}?silent=false"
+    response = requests.delete(url, headers=headers)
+    if response.status_code == 200:
+        print(f"Successfully closed dm {job}")
+        log.append_log(f"Successfully closed dm {job}")
+        return True
+    else:
+        print(f"Failed to close dm {job}: {response.status_code} - {response.text}")
+        log.append_log(f"Failed to close dm {job}: {response.status_code} - {response.text}")
+        return False

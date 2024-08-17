@@ -46,8 +46,11 @@ class SecondFrame(customtkinter.CTkFrame):
                                                   hover_color="#8c0000")
         self.new_button.grid(row=0, column=2, padx=50, pady=(10, 10), sticky="s")
 
+        self.checkbox = customtkinter.CTkCheckBox(self, text="Close Dm After Delete", onvalue=True, offvalue=False)
+        self.checkbox.grid(row=0, column=1, padx=(20, 10), pady=(10,10), sticky="s")
+
         self.progress_bar = customtkinter.CTkProgressBar(self, orientation='horizontal', mode='determinate')
-        self.progress_bar.grid(row=0, column=1, columnspan=1, padx=(20, 10), pady=(30, 30), sticky="nsew")
+        self.progress_bar.grid(row=0, column=1, columnspan=1, padx=(20, 10), pady=(20, 30), sticky="new")
         self.progress_bar.set(0)  # Initialize progress bar to 0
 
         # Create a frame to hold the label, slider, and value display
@@ -84,7 +87,6 @@ class SecondFrame(customtkinter.CTkFrame):
         self.append_log("Welcome To Discord Tool. Select A Dm to delete all messages")
 
     def handle_toggle(self, dm, is_enabled):
-        print(is_enabled)
         if is_enabled:
             # Queue the job
             self.queue_job_event(dm)
@@ -96,9 +98,7 @@ class SecondFrame(customtkinter.CTkFrame):
     def queue_job_event(self, dm):
         self.jobs.append(dm['id'])
         self.append_log(f"{self.id_to_name(dm['id'])} has been added to the queue")
-        print("jobs=", self.jobs)
         self.append_log(f"Current jobs:\n{self.format_jobs()}")
-        # pprint.pprint(search_message_from_channel(self.auth_key, dm['id'], self.user_data['id']))
 
     # cancel job
     def cancel_job_event(self, dm):
@@ -115,7 +115,6 @@ class SecondFrame(customtkinter.CTkFrame):
             self.append_log(f"Canceled job for DM ID: {dm['id']}")
             current_jobs = ', '.join([str(job[1]) for job in self.jobs])
             self.append_log(f"Current jobs:\n{self.format_jobs()}")
-            print("jobs=", self.jobs)
 
         else:
             self.append_log(f"No job found for DM ID: {dm['id']}")
@@ -187,6 +186,8 @@ class SecondFrame(customtkinter.CTkFrame):
                 is_running=lambda: self.is_running,
                 channel_name=self.id_to_name(job)
             )
+            if self.checkbox.get():
+                close_dm(job, self.auth_key, self)
         if self.dms_loaded:
             self.get_counts_button.configure(state="enabled")
         self.scrollable_frame.restore_button_states()
@@ -265,7 +266,6 @@ class SecondFrame(customtkinter.CTkFrame):
     def id_to_name(self, id):
         for item in self.open_dms:
             if id == item['id']:
-                print(item)
                 if len(item['recipients']) == 1:
                     return item['recipients'][0]['username']
                 else:
