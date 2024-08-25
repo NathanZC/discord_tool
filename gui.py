@@ -1,10 +1,8 @@
 import os
 
 from frames.closed_dms import ForthFrame
-
 from frames.homeframegui import *
 from frames.instructions import Instructions
-
 from frames.opendmsframegui import *
 from frames.accessibleserversframegui import *
 
@@ -53,8 +51,8 @@ class App(customtkinter.CTk):
         threading.Thread(target=self.second_frame.update_second_frame).start()
 
     def frame_3_button_event(self):
-
         self.select_frame_by_name("frame_3")
+        #hi2
         print("selected frame 3 ")
         self.third_frame.update_data(self.auth_key, self.servers, self.user_data)
         self.third_frame.get_counts_button.configure(state="disabled")

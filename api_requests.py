@@ -1,13 +1,14 @@
 import requests
 import time
 
+from helpers import date_to_snowflake
+
 
 def get_userid_from_channelid(channel_id, auth):
     url = f'https://ptb.discord.com/api/v9/channels/{channel_id}'
     headers = {
         'Authorization': auth
     }
-
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         print('Request successful')
@@ -21,24 +22,32 @@ def get_userid_from_channelid(channel_id, auth):
 
 
 def open_dm_with_userid(user_id, auth):
-    url = f'https://ptb.discord.com/api/v9/users/@me/channels'
+    url = 'https://ptb.discord.com/api/v9/users/@me/channels'
     headers = {
         'Authorization': auth
     }
     data = {
         "recipients": [user_id]
     }
-    response = requests.post(url, headers=headers, json=data)
-    if response.status_code == 200:
-        print('Request successful')
-        data = response.json()
-        # pprint.pprint(data)
-        recipients = data
-        # print(recipients)
-        return recipients
-    else:
-        print('Request failed with status code:', response.status_code)
-        return response
+    while True:
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            print('Request successful')
+            data = response.json()
+            return data
+        elif response.status_code == 429:
+            retry_after = response.headers.get('Retry-After')
+            if retry_after:
+                retry_after_seconds = int(retry_after)
+                print(f"Rate limited. Retrying after {retry_after_seconds} seconds...")
+                time.sleep(retry_after_seconds)
+            else:
+                print(f"Rate limit exceeded. Response: {response.text}")
+                break
+        else:
+            print('Request failed with status code:', response.status_code)
+            print("Error: ", response.content)
+            break
 
 
 def get_all_open_dms(auth):
@@ -218,7 +227,7 @@ def get_count_messages_for_user_by_server(auth, server_id, author_id=None, log=N
 
 
 def search_message_from_channel(auth, channel_or_guild_id, author_id=None, offset=0, self=None, reset_bar=False,
-                                isguild=False):
+                                isguild=False, before_date=None, after_date=None, content=None):
     headers = {
         "Authorization": f"{auth}",  # If using a user token (less recommended)
     }
@@ -227,26 +236,36 @@ def search_message_from_channel(auth, channel_or_guild_id, author_id=None, offse
         params['author_id'] = author_id
     if offset:
         params['offset'] = offset
+    if before_date:
+        params["max_id"] = before_date
+    if after_date:
+        params["min_id"] = after_date
+    if content:
+        params["content"] = content
     if not isguild:
-        url_to_check_channel_type = f'https://ptb.discord.com/api/v9/channels/{channel_or_guild_id}'
-        response_check = requests.get(url_to_check_channel_type, headers=headers)
-        if response_check.status_code == 200:
-            if response_check.json()['type'] == 0:
-                server_id = response_check.json()['guild_id']
-                # print("type is server:", serverid)
-                url = f'https://discord.com/api/v9/guilds/{channel_or_guild_id}/messages/search'
-                params['channel_id'] = channel_or_guild_id
-            else:
-                # print("type is dm")
-                url = f'https://discord.com/api/v9/channels/{channel_or_guild_id}/messages/search'
-        else:
-            print(f"Error {response_check.status_code}: {response_check.json()}")
-            return None
+        # url_to_check_channel_type = f'https://ptb.discord.com/api/v9/channels/{channel_or_guild_id}'
+        # response_check = requests.get(url_to_check_channel_type, headers=headers)
+        # if response_check.status_code == 200:
+        #     if response_check.json()['type'] == 0:
+        #         server_id = response_check.json()['guild_id']
+        #         # print("type is server:", serverid)
+        #         url = f'https://discord.com/api/v9/guilds/{channel_or_guild_id}/messages/search'
+        #         params['channel_id'] = channel_or_guild_id
+        #     else:
+        #         # print("type is dm")
+        url = f'https://discord.com/api/v9/channels/{channel_or_guild_id}/messages/search'
+        # else:
+        #     print(f"Error {response_check.status_code}: {response_check.json()}")
+        #     return None
     else:
         url = f'https://discord.com/api/v9/guilds/{channel_or_guild_id}/messages/search'
+        params["include_nsfw"] = "true"
     response = requests.get(url, headers=headers, params=params)
+    print(url)
+    print(params)
     if response.status_code == 200:
         data = response.json()
+        print(data)
         messages = [msg for sublist in data['messages'] for msg in sublist]
         sorted_messages = sorted(messages, key=lambda x: int(x['id']), reverse=True)
         total = int(data['total_results'])
@@ -262,9 +281,8 @@ def search_message_from_channel(auth, channel_or_guild_id, author_id=None, offse
 def delete_message(auth, channel_id, message_id):
     url = f"https://discord.com/api/v9/channels/{channel_id}/messages/{message_id}"
     headers = {
-        "Authorization": f"{auth}",  # If using a user token (less recommended)
+        "Authorization": f"{auth}"
     }
-
     response = requests.delete(url, headers=headers)
     if response.status_code == 204:
         # print(f"Successfully deleted message {message_id}")
@@ -275,92 +293,105 @@ def delete_message(auth, channel_id, message_id):
 
 
 def get_and_del_all_messages_from_channel_search(auth, channel_id, delay, author_id=None, self=None, is_running=None,
-                                                 is_guild=False, channel_name=None):
-    seen = set()
-    page = 1
-    offset = 0
-    total = 0
-    delete_messages_count = 0
-    count_stuck = 0
-    while True:
-        if page == 1:
-            data, total = search_message_from_channel(auth, channel_id, author_id, offset, self=self, reset_bar=True,
-                                                      isguild=is_guild)
-        else:
-            data, _ = search_message_from_channel(auth, channel_id, author_id, offset, self=self, reset_bar=False,
-                                                  isguild=is_guild)
-        if data is None:
-            # print("Rate limited, sleeping 10 seconds")
-            time.sleep(10)
-            print(f'hit here: {count_stuck}')
-            count_stuck += 1
-        else:
-            to_delete = []
-            messages = data
-            # print("potential messages found: ", len(data))
-            for message in messages:
-                # print(message['id'])
-                if message['id'] not in seen:
-                    if message['type'] == 0 or 6 <= message['type'] <= 21:  # filter out messages (can't be deleted)
-                        to_delete.append((message['id'], message['content'], message['channel_id']))
-                    else:
-                        self.append_log("skipping message because not deletable")
-                        seen.add(message['id'])
-                        offset += 1
-                else:
-                    print("errrrrm this its going over the same message more than once for some reason: ",
-                          message['id'])
+                                                 is_guild=False, channel_name=None, before_date=None, after_date=None,
+                                                 content_search=None):
+    while True:  # Loop to allow restarting the function
+        seen = set()
+        page = 1
+        offset = 0
+        total = 0
+        delete_messages_count = 0
+        count_stuck = 0
 
-            # print(f"found {len(to_delete)} messages to delete on page")
-            if len(to_delete) > 0:
-                self.append_log(f'found: {len(to_delete)} to delete')
+        while True:
+            if page == 1:
+                data, total = search_message_from_channel(auth, channel_id, author_id, offset, self=self,
+                                                          reset_bar=True,
+                                                          isguild=is_guild, before_date=before_date,
+                                                          after_date=after_date, content=content_search)
+                print("first pass data: ", data, "total: ", total)
             else:
-                if total > 0:
-                    self.append_log("found no messages, waiting for discord to index and searching again")
-                    time.sleep(5)
-            page += 1
-            for message_id, content, c_id in to_delete:
-                if self is not None:
-                    if not is_running():
-                        self.get_counts_button.configure(state="enabled")
-                        self.new_button.configure(text="Start")
-                        self.append_log("Stopped deleting messages")
-                        return
-                retry_count = 0
-                max_retries = 5
-                while retry_count < max_retries:
-                    # print(f"attempting to delete message: channel: {c_id} messageid: {message_id}")
-                    if delete_message(auth, c_id, message_id):
-                        delete_messages_count += 1
-                        seen.add(message_id)
-                        # print("delete message count: ", delete_messages_count)
-                        if channel_name:
-                            self.append_log(channel_name + ', Deleted: ' + content)
+                data, _ = search_message_from_channel(auth, channel_id, author_id, offset, self=self, reset_bar=False,
+                                                      isguild=is_guild, before_date=before_date, after_date=after_date,
+                                                      content=content_search)
+                print("other pass data: ", data, "total: ", total)
+
+            if count_stuck > 5:
+                print("Count stuck exceeded 5, restarting the function.")
+                self.append_log("Seems like we are stuck, restarting deletion for the current Dm")
+                break  # Break the inner while loop to restart the entire function
+
+            if data is None:
+                time.sleep(10)
+                print(f'hit here: {count_stuck}')
+                self.append_log("Got no messages")
+                count_stuck += 1
+            else:
+                to_delete = []
+                messages = data
+                last_offset = offset
+                for message in messages:
+                    if message['id'] not in seen:
+                        if message['type'] == 0 or 6 <= message['type'] <= 21:  # filter out messages (can't be deleted)
+                            to_delete.append((message['id'], message['content'], message['channel_id']))
                         else:
-                            self.append_log('Deleted: ' + content)
-                        self.update_progress()
-                        break  # Exit the retry loop if deletion is successful
-                    else:
-                        retry_count += 1
-                        self.append_log(f'Error deleting message: {content}')
-                        if retry_count < max_retries:
-                            delay_value = delay() * (2 ** retry_count) + 1  # Exponential backoff
-                            self.append_log(f'Retrying in {delay_value} seconds...')
-                            time.sleep(delay_value)  # Increase delay before retrying
-                        else:
-                            self.append_log('Max retries reached. Moving to next message.')
-                            self.update_progress()
-                            seen.add(message_id)
+                            self.append_log("skipping message because not deletable")
+                            seen.add(message['id'])
                             offset += 1
-                            break
-                            # print("issue deleting message so skipping it!")
-                time.sleep(delay())  # Call delay as a function to fetch updated value
-            print("offset: ", offset, "len of seen: ", len(seen), "total: ", total)
-            if len(seen) >= total:
-                self.append_log("finished DM")
-                break
-        self.append_log(f'searching next page for messages after {delay() * 3 + 25}s delay')
-        time.sleep(delay() * 3 + 25)  # Call delay as a function to fetch updated value
+                    else:
+                        print("errrrrm this its going over the same message more than once for some reason: ",
+                              message['id'])
+                if len(to_delete) > 0 or offset != last_offset: # check if new messages to delete or the offset was updated
+                    self.append_log(f'found: {len(to_delete)} to delete')
+                else:
+                    if total > 0 and len(seen) < total:
+                        self.append_log("found no messages, waiting for discord to index and searching again")
+                        time.sleep(10 + delay())
+                        count_stuck += 1
+                    else:
+                        count_stuck = 0
+                page += 1
+                for message_id, content, c_id in to_delete:
+                    if self is not None:
+                        if not is_running():
+                            self.get_counts_button.configure(state="enabled")
+                            self.new_button.configure(text="Start")
+                            self.append_log("Stopped deleting messages")
+                            return
+                    retry_count = 0
+                    max_retries = 5
+                    while retry_count < max_retries:
+                        if delete_message(auth, c_id, message_id):
+                            delete_messages_count += 1
+                            seen.add(message_id)
+                            if channel_name:
+                                self.append_log(channel_name + ', Deleted: ' + content)
+                            else:
+                                self.append_log('Deleted: ' + content)
+                            self.update_progress()
+                            break  # Exit the retry loop if deletion is successful
+                        else:
+                            retry_count += 1
+                            self.append_log(f'Error deleting message: {content}')
+                            if retry_count < max_retries:
+                                delay_value = delay() * (2 ** retry_count) + 1  # Exponential backoff
+                                self.append_log(f'Retrying in {delay_value} seconds...')
+                                time.sleep(delay_value)  # Increase delay before retrying
+                            else:
+                                self.append_log('Max retries reached. Moving to next message.')
+                                self.update_progress()
+                                seen.add(message_id)
+                                offset += 1
+                                break
+                    time.sleep(delay())  # Call delay as a function to fetch updated value
+
+                print("offset: ", offset, "len of seen: ", len(seen), "total: ", total, "delete message count: ", delete_messages_count)
+                if len(seen) >= total:
+                    self.append_log("finished DM")
+                    return  # Return to exit the function entirely when all messages are processed
+
+            self.append_log(f'searching next page for messages after {delay() * 3 + 25}s delay')
+            time.sleep(delay() * 3 + 25)  # Call delay as a function to fetch updated value
 
 
 def get_user_data(auth):

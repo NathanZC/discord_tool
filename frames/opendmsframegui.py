@@ -1,7 +1,7 @@
 import threading
 from frames.gui_components import ScrollableLabelButtonFrame
 from helpers import *
-
+from api_requests import *
 
 class SecondFrame(customtkinter.CTkFrame):
     def __init__(self, master, auth_key, open_dms, user_data):
@@ -12,32 +12,27 @@ class SecondFrame(customtkinter.CTkFrame):
         self.user_data = user_data
 
         self.jobs = []
-
         self.dms_loaded = False
         self.is_running = False
         self.is_getting_message_counts = False
         self.stop_thread = threading.Event()
         self.slider_delay = 1  # Initial delay value
-
         self.total_progress_value = 100
         self.current_progress_value = 0
-
-        self.lock = threading.Lock()  # Lock for controlling access to update method
 
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(2, weight=1)
-        self.grid_columnconfigure(3, weight=3)
+        self.grid_columnconfigure(3, weight=1)
+        self.grid_columnconfigure(4, weight=3)
 
         # Add ScrollableLabelButtonFrame
-        self.scrollable_frame = ScrollableLabelButtonFrame(master=self,
-                                                           toggle_command=self.handle_toggle,
+        self.scrollable_frame = ScrollableLabelButtonFrame(master=self, toggle_command=self.handle_toggle,
                                                            corner_radius=0)
         self.scrollable_frame.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
 
-        # Add new elements
         self.get_counts_button = customtkinter.CTkButton(self, text="Get message counts", state="disabled",
                                                          command=self.get_message_counts_button)
         self.get_counts_button.grid(row=0, column=2, padx=50, pady=10, sticky="n")
@@ -46,45 +41,71 @@ class SecondFrame(customtkinter.CTkFrame):
                                                   hover_color="#8c0000")
         self.new_button.grid(row=0, column=2, padx=50, pady=(10, 10), sticky="s")
 
-        self.checkbox = customtkinter.CTkCheckBox(self, text="Close Dm After Delete", onvalue=True, offvalue=False)
-        self.checkbox.grid(row=0, column=1, padx=(20, 10), pady=(10,10), sticky="s")
-
         self.progress_bar = customtkinter.CTkProgressBar(self, orientation='horizontal', mode='determinate')
-        self.progress_bar.grid(row=0, column=1, columnspan=1, padx=(20, 10), pady=(20, 30), sticky="new")
+        self.progress_bar.grid(row=0, column=1, columnspan=1, padx=(20, 10), pady=(30, 30), sticky="nsew")
         self.progress_bar.set(0)  # Initialize progress bar to 0
 
         # Create a frame to hold the label, slider, and value display
         slider_frame = customtkinter.CTkFrame(self)
         slider_frame.grid(row=0, column=0, padx=(20, 10), pady=(10, 10), sticky="s")
-
         self.slider_label = customtkinter.CTkLabel(slider_frame, text="Delay")
         self.slider_label.grid(row=0, column=0, padx=10, pady=5)
-        self.log_textbox = customtkinter.CTkTextbox(self, wrap="word")
-        self.log_textbox.grid(row=0, column=3, rowspan=2, padx=(20, 10), pady=(10, 10), sticky="nsew")
+        self.slider_1 = customtkinter.CTkSlider(slider_frame, from_=0, to=20, number_of_steps=15,
+                                                command=self.update_slider_value)
+        self.slider_1.set(self.slider_delay)  # Set to the initial delay value
+        self.slider_1.grid(row=1, column=0, columnspan=2, padx=10, pady=5)
         self.slider_value = customtkinter.StringVar()
         self.slider_value_label = customtkinter.CTkLabel(slider_frame, textvariable=self.slider_value)
         self.slider_value_label.grid(row=0, column=1, padx=10, pady=5)
-
-        self.slider_1 = customtkinter.CTkSlider(slider_frame, from_=0, to=20, number_of_steps=15,
-                                                command=self.update_slider_value)
-        self.slider_1.grid(row=1, column=0, columnspan=2, padx=10, pady=5)
-
-        # Set initial slider value
-        self.slider_1.set(self.slider_delay)  # Set to the initial delay value
         self.update_slider_value(self.slider_delay)  # Initialize the display
 
-        # Add a toggle button
+        self.log_textbox = customtkinter.CTkTextbox(self, wrap="word")  # Add a large text output box for logs
+        self.log_textbox.grid(row=0, column=4, rowspan=2, padx=(20, 10), pady=(10, 10), sticky="nsew")
 
-        # Add a large text output box for logs
-        self.log_textbox = customtkinter.CTkTextbox(self, wrap="word")
-        self.log_textbox.grid(row=0, column=3, rowspan=2, padx=(20, 10), pady=(10, 10), sticky="nsew")
+        self.tabview = customtkinter.CTkTabview(self, width=250)
+        self.tabview.grid(row=0, column=3, rowspan=2, padx=(20, 0), pady=(20, 0), sticky="nsew")
+        self.tabview.add("Options")
+        self.tabview.add("Extras")
+        self.tabview.tab("Options").grid_columnconfigure(0, weight=2)  # configure grid of individual tabs
+        self.tabview.tab("Extras").grid_columnconfigure(0, weight=1)
+        self.checkbox = customtkinter.CTkCheckBox(self.tabview.tab("Options"), text="Close Dm After Delete", onvalue=True, offvalue=False)
+        self.checkbox.grid(row=0, column=0, padx=(20, 10), pady=(10, 10), sticky="s")
+        # Add input fields for "before" and "after" dates
+        # Add input fields for "before" and "after" dates
+        self.before_date_label = customtkinter.CTkLabel(self.tabview.tab("Options"), text="Before Date (YYYY-MM-DD):")
+        self.before_date_label.grid(row=1, column=0, padx=(20, 10), pady=(5, 5), sticky="w")
 
-        # Configure scrollbar for the text box
-        scrollbar = customtkinter.CTkScrollbar(self, command=self.log_textbox.yview)
-        scrollbar.grid(row=0, column=4, rowspan=2, sticky='ns')
-        self.log_textbox.configure(yscrollcommand=scrollbar.set)
+        self.before_date_entry = customtkinter.CTkEntry(self.tabview.tab("Options"), width=200)
+        self.before_date_entry.grid(row=2, column=0, padx=(20, 10), pady=(5, 10), sticky="w")
 
-        self.append_log("Welcome To Discord Tool. Select A Dm to delete all messages")
+        self.after_date_label = customtkinter.CTkLabel(self.tabview.tab("Options"), text="After Date (YYYY-MM-DD):")
+        self.after_date_label.grid(row=3, column=0, padx=(20, 10), pady=(5, 5), sticky="w")
+
+        self.after_date_entry = customtkinter.CTkEntry(self.tabview.tab("Options"), width=200)
+        self.after_date_entry.grid(row=4, column=0, padx=(20, 10), pady=(5, 10), sticky="w")
+
+        # Add input field for "containing text"
+        self.containing_text_label = customtkinter.CTkLabel(self.tabview.tab("Options"), text="Containing Text:")
+        self.containing_text_label.grid(row=5, column=0, padx=(20, 10), pady=(5, 5), sticky="w")
+
+        self.containing_text_entry = customtkinter.CTkEntry(self.tabview.tab("Options"), width=200)
+        self.containing_text_entry.grid(row=6, column=0, padx=(20, 10), pady=(5, 10), sticky="w")
+
+        # # Add checkboxes for "Has Link", "Has File", and "Include Pinned"
+        # self.has_link_checkbox = customtkinter.CTkCheckBox(self.tabview.tab("Options"), text="Has Link", onvalue=True,
+        #                                                    offvalue=False)
+        # self.has_link_checkbox.grid(row=7, column=0, padx=(20, 10), pady=(5, 5), sticky="w")
+        # self.has_link_checkbox.select()  # Automatically enable the checkbox
+        #
+        # self.has_file_checkbox = customtkinter.CTkCheckBox(self.tabview.tab("Options"), text="Has File", onvalue=True,
+        #                                                    offvalue=False)
+        # self.has_file_checkbox.grid(row=8, column=0, padx=(20, 10), pady=(5, 5), sticky="w")
+        # self.has_file_checkbox.select()  # Automatically enable the checkbox
+        #
+        # self.include_pinned_checkbox = customtkinter.CTkCheckBox(self.tabview.tab("Options"), text="Include Pinned",
+        #                                                          onvalue=True, offvalue=False)
+        # self.include_pinned_checkbox.grid(row=9, column=0, padx=(20, 10), pady=(5, 10), sticky="w")
+        # self.include_pinned_checkbox.select()  # Automatically enable the checkbox
 
     def handle_toggle(self, dm, is_enabled):
         if is_enabled:
@@ -94,14 +115,12 @@ class SecondFrame(customtkinter.CTkFrame):
             # Cancel the job
             self.cancel_job_event(dm)
 
-    # start job
-    def queue_job_event(self, dm):
+    def queue_job_event(self, dm):     # start job
         self.jobs.append(dm['id'])
         self.append_log(f"{self.id_to_name(dm['id'])} has been added to the queue")
         self.append_log(f"Current jobs:\n{self.format_jobs()}")
 
-    # cancel job
-    def cancel_job_event(self, dm):
+    def cancel_job_event(self, dm):     # cancel job
         # Handle the cancel job event
         self.append_log(f"Removed {self.id_to_name(dm['id'])} from the queue")
         job_to_remove = None
@@ -115,7 +134,6 @@ class SecondFrame(customtkinter.CTkFrame):
             self.append_log(f"Canceled job for DM ID: {dm['id']}")
             current_jobs = ', '.join([str(job[1]) for job in self.jobs])
             self.append_log(f"Current jobs:\n{self.format_jobs()}")
-
         else:
             self.append_log(f"No job found for DM ID: {dm['id']}")
 
@@ -123,7 +141,6 @@ class SecondFrame(customtkinter.CTkFrame):
         if self.is_getting_message_counts:
             # Signal the thread to stop
             self.is_getting_message_counts = False
-
         else:
             # Clear the stop event and start the thread
             self.is_getting_message_counts = True
@@ -150,7 +167,6 @@ class SecondFrame(customtkinter.CTkFrame):
         self.progress_bar.set(0)  # Update progress bar
 
     def toggle_button(self):
-
         if self.is_running:
             self.is_running = False
             self.append_log("Jobs Stopping")
@@ -163,8 +179,36 @@ class SecondFrame(customtkinter.CTkFrame):
             threading.Thread(target=self.handle_jobs).start()
 
     def handle_jobs(self):
+        content = self.containing_text_entry.get().strip()
+        if len(content) == 0:
+            content = None
+        before_date = self.before_date_entry.get().strip()  # Get and strip any extra whitespace
+        after_date = self.after_date_entry.get().strip()
+        before_date = before_date if before_date else None
+        after_date = after_date if after_date else None
+        if before_date and not is_valid_date(before_date):
+            self.append_log("Invalid before date format or time. Please use 'YYYY-MM-DD' and only dates since discord was created.")
+            if self.dms_loaded:
+                self.get_counts_button.configure(state="enabled")
+            self.scrollable_frame.restore_button_states()
+            self.new_button.configure(text="Start")
+            self.is_running = False
+            self.append_log("Jobs finished")
+            return
+        if after_date and not is_valid_date(after_date):
+            self.append_log("Invalid after date format or time. Please use 'YYYY-MM-DD' and only dates since discord was created.")
+            if self.dms_loaded:
+                self.get_counts_button.configure(state="enabled")
+            self.scrollable_frame.restore_button_states()
+            self.new_button.configure(text="Start")
+            self.is_running = False
+            self.append_log("Jobs finished")
+            return
+        if after_date:
+            after_date = date_to_snowflake(after_date)
+        if before_date:
+            before_date = date_to_snowflake(before_date)
         self.append_log("starting Jobs")
-
         for job in self.jobs:
             self.append_log(f"Job: {self.id_to_name(job)}")
             for _ in range(int(self.slider_delay)):  # Break the sleep into smaller intervals
@@ -184,7 +228,10 @@ class SecondFrame(customtkinter.CTkFrame):
                 delay=lambda: self.slider_delay,  # Pass delay as a callable to get the updated value
                 self=self,
                 is_running=lambda: self.is_running,
-                channel_name=self.id_to_name(job)
+                channel_name=self.id_to_name(job),
+                before_date=before_date,
+                after_date=after_date,
+                content_search=content
             )
             if self.checkbox.get():
                 close_dm(job, self.auth_key, self)
@@ -223,23 +270,22 @@ class SecondFrame(customtkinter.CTkFrame):
         self.is_getting_message_counts = False
 
     def update_second_frame(self):
-        with self.lock:
-            if self.open_dms:
-                for i, dm in enumerate(self.open_dms, start=1):
-                    usernames = sorted([recipient['username'] for recipient in dm['recipients']])
-                    avatar_urls = [
-                        f"https://cdn.discordapp.com/avatars/{recipient['id']}/{recipient['avatar']}.png"
-                        for recipient in dm['recipients'] if recipient['avatar']
-                    ]
-                    item_text = f"{i}. Group DM with: {(', '.join(usernames))[:8]}..." if dm[
-                                                                                              "type"] == 3 else f"{i}. DM with: {usernames[0]}"
-                    if not self.scrollable_frame.item_exists(item_text):
-                        self.scrollable_frame.add_item(item_text, image=None, dm=dm)
-                        if avatar_urls:
-                            self.update_avatar_image(i, avatar_urls[0], usernames, dm["type"] == 3)
-            self.dms_loaded = True
-            if not self.is_running:
-                self.get_counts_button.configure(state="normal")
+        if self.open_dms:
+            for i, dm in enumerate(self.open_dms, start=1):
+                usernames = sorted([recipient['username'] for recipient in dm['recipients']])
+                avatar_urls = [
+                    f"https://cdn.discordapp.com/avatars/{recipient['id']}/{recipient['avatar']}.png"
+                    for recipient in dm['recipients'] if recipient['avatar']
+                ]
+                item_text = f"{i}. Group DM with: {(', '.join(usernames))[:8]}..." if dm[
+                                                                                          "type"] == 3 else f"{i}. DM with: {usernames[0]}"
+                if not self.scrollable_frame.item_exists(item_text):
+                    self.scrollable_frame.add_item(item_text, image=None, dm=dm)
+                    if avatar_urls:
+                        self.update_avatar_image(i, avatar_urls[0], usernames, dm["type"] == 3)
+        self.dms_loaded = True
+        if not self.is_running:
+            self.get_counts_button.configure(state="normal")
 
     def update_avatar_image(self, index, avatar_url, usernames, is_group_dm):
         avatar_image = download_avatar_image(avatar_url)
@@ -274,7 +320,7 @@ class SecondFrame(customtkinter.CTkFrame):
                         s.append(f'{r['username']}, ')
                     return ''.join(s)
         return None
-
+    #meow
     def reset(self):
         # Reset the jobs list
         self.jobs.clear()
@@ -284,11 +330,11 @@ class SecondFrame(customtkinter.CTkFrame):
 
         # Clear the log text box
         self.log_textbox.delete(1.0, customtkinter.END)
-
+        self.append_log("Welcome To Discord Tool. Select A Dm to delete all messages")
         # Reset buttons and other UI elements
         self.get_counts_button.configure(state="disabled")
         self.new_button.configure(text="Start", state="normal")
         self.scrollable_frame.clear_items()  # If you have a method to clear the scrollable frame
-
+        self.open_dms = get_all_open_dms(self.auth_key)
         self.is_running = False
         self.is_getting_message_counts = False

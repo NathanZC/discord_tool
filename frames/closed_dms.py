@@ -31,37 +31,26 @@ class ForthFrame(customtkinter.CTkFrame):
         self.grid_columnconfigure(3, weight=1)
         self.grid_columnconfigure(4, weight=3)
 
-        # Add ScrollableLabelButtonFrame
-        self.scrollable_frame = ScrollableLabelButtonFrame2(master=self, corner_radius=0,
-                                                            toggle_command=self.handle_toggle, logger=self.append_log)
+        self.scrollable_frame = ScrollableLabelButtonFrame2(master=self, corner_radius=0, toggle_command=self.handle_toggle, logger=self.append_log)
         self.scrollable_frame.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
 
-        # Add new elements
-        self.get_counts_button = customtkinter.CTkButton(self, text="Get message counts", state="disabled",
-                                                         command=self.get_message_counts_button)
+        self.get_counts_button = customtkinter.CTkButton(self, text="Get message counts", state="disabled", command=self.get_message_counts_button)
         self.get_counts_button.grid(row=0, column=2, padx=50, pady=10, sticky="n")
-
-        self.new_button = customtkinter.CTkButton(self, text="Start", command=self.toggle_button, fg_color='red',
-                                                  hover_color="#8c0000")
+        self.new_button = customtkinter.CTkButton(self, text="Start", command=self.toggle_button, fg_color='red', hover_color="#8c0000")
         self.new_button.grid(row=0, column=2, padx=50, pady=(10, 10), sticky="s")
 
         self.progress_bar = customtkinter.CTkProgressBar(self, orientation='horizontal', mode='determinate')
         self.progress_bar.grid(row=0, column=1, columnspan=1, padx=(20, 10), pady=(30, 30), sticky="nsew")
         self.progress_bar.set(0)  # Initialize progress bar to 0
 
-        # Create a frame to hold the label, slider, and value display
         slider_frame = customtkinter.CTkFrame(self)
         slider_frame.grid(row=0, column=0, padx=(20, 10), pady=(10, 10), sticky="s")
-
         self.slider_label = customtkinter.CTkLabel(slider_frame, text="Delay")
         self.slider_label.grid(row=0, column=0, padx=10, pady=5)
-
         self.slider_value = customtkinter.StringVar()
         self.slider_value_label = customtkinter.CTkLabel(slider_frame, textvariable=self.slider_value)
         self.slider_value_label.grid(row=0, column=1, padx=10, pady=5)
-
-        self.slider_1 = customtkinter.CTkSlider(slider_frame, from_=0, to=20, number_of_steps=15,
-                                                command=self.update_slider_value)
+        self.slider_1 = customtkinter.CTkSlider(slider_frame, from_=0, to=20, number_of_steps=15, command=self.update_slider_value)
         self.slider_1.grid(row=1, column=0, columnspan=2, padx=10, pady=5)
         self.slider_1.set(self.slider_delay)  # Set to the initial delay value
         self.update_slider_value(self.slider_delay)  # Initialize the display
@@ -70,56 +59,32 @@ class ForthFrame(customtkinter.CTkFrame):
         self.log_textbox = customtkinter.CTkTextbox(self, wrap="word")
         self.log_textbox.grid(row=0, column=4, rowspan=2, padx=(20, 10), pady=(10, 10), sticky="nsew")
 
-        # Configure scrollbar for the text box
-        scrollbar = customtkinter.CTkScrollbar(self, command=self.log_textbox.yview)
-        scrollbar.grid(row=0, column=5, rowspan=2, sticky='ns')
-        self.log_textbox.configure(yscrollcommand=scrollbar.set)
-
-        self.append_log("To use this, you should request your data from discord and then go to "
-                        "package>messages>index.json file and input as the input file. This will allow you to re-open "
-                        "all closed dms and delete them.")
-
         input_frame = customtkinter.CTkFrame(self)
         input_frame.grid(row=1, column=3, rowspan=1, padx=10, pady=10, sticky="nsew")
         input_frame.grid_rowconfigure(0, weight=0)
         input_frame.grid_rowconfigure(1, weight=0)
         input_frame.grid_columnconfigure(0, weight=1)
-
-        # Add a label above the textbox
         label_text = "Use this to open a DM without having to send a friend request. Input user ID:"
         label = customtkinter.CTkLabel(input_frame, text=label_text, wraplength=200)
         label.grid(row=8, column=0, padx=10, pady=(10, 0), sticky="nsew")
-
         self.input_text = customtkinter.CTkTextbox(input_frame, wrap="word", height=10)
         self.input_text.grid(row=9, column=0, padx=10, pady=(10, 0), sticky="nsew")
         self.input_text.bind("<KeyRelease>", self.check_text_input)
-
-        self.submit_button_by_id = customtkinter.CTkButton(input_frame, text="Open DM", state="disabled",
-                                                     command=self.open_dm_from_input)
+        self.submit_button_by_id = customtkinter.CTkButton(input_frame, text="Open DM", state="disabled", command=self.open_dm_from_input)
         self.submit_button_by_id.grid(row=11, column=0, padx=10, pady=(10, 10), sticky="n")
-
-        self.open_all_dms_button = customtkinter.CTkButton(input_frame, text="Open All Dms", state="disabled",
-                                                     command=self.open_all_dms)
+        self.open_all_dms_button = customtkinter.CTkButton(input_frame, text="Open All Dms", state="disabled", command=self.open_all_dms)
         self.open_all_dms_button.grid(row=7, column=0, padx=10, pady=(10, 10), sticky="n")
         label_text = "(Max 100 open at once)"
         label = customtkinter.CTkLabel(input_frame, text=label_text, wraplength=200)
         label.grid(row=6, column=0, padx=10, pady=(10, 0), sticky="nsew")
-
-        # Add start index input
         start_index_label = customtkinter.CTkLabel(input_frame, text="Start Index:")
         start_index_label.grid(row=1, column=0, padx=10, pady=(10, 0), sticky="nsew")
-
         self.start_index_input = customtkinter.CTkTextbox(input_frame, wrap="word", height=10)
         self.start_index_input.grid(row=2, column=0, padx=10, pady=(10, 0), sticky="nsew")
-
-        # Add end index input
         end_index_label = customtkinter.CTkLabel(input_frame, text="End Index:")
         end_index_label.grid(row=3, column=0, padx=10, pady=(10, 0), sticky="nsew")
-
         self.end_index_input = customtkinter.CTkTextbox(input_frame, wrap="word", height=10)
         self.end_index_input.grid(row=4, column=0, padx=10, pady=(10, 0), sticky="nsew")
-
-        # Update the position of the other elements
         self.submit_button_by_id.grid(row=10, column=0, padx=10, pady=(10, 10), sticky="n")
         self.open_all_dms_button.grid(row=5, column=0, padx=10, pady=(10, 10), sticky="n")
         label_text = "Batch Open Dms (delay included)"
@@ -128,6 +93,9 @@ class ForthFrame(customtkinter.CTkFrame):
         self.file_input_button = customtkinter.CTkButton(self, text="Input File", command=self.open_file_dialog)
         self.file_input_button.grid(row=0, column=3, padx=10, pady=10, sticky="s")
 
+        self.append_log("To use this, you should request your data from discord and then go to "
+                        "package>messages>index.json file and input as the input file. This will allow you to re-open "
+                        "all closed dms and delete them.")
     def check_text_input(self, event=None):
         text = self.input_text.get("1.0", "end-1c")
         if text.strip():
@@ -164,8 +132,6 @@ class ForthFrame(customtkinter.CTkFrame):
         """Starts the open_all_dms_threaded function in a separate thread."""
         threading.Thread(target=self.open_all_dms_threaded, daemon=True).start()
 
-
-
     def open_dm_from_input(self):
         text = self.input_text.get("1.0", "end-1c").strip()
         print(text)
@@ -176,7 +142,6 @@ class ForthFrame(customtkinter.CTkFrame):
                 self.submit_button_by_id.configure(state="disabled")
                 self.input_text.delete("1.0", "end")  # Clear the input text box
                 self.append_log(f"Successfully opened dm: {text}")
-
             else:
                 print(self.append_log(f"Failed to Open DM: {r.content}"))
             # Add your logic here to handle opening the DM based on the input text
@@ -347,8 +312,8 @@ class ForthFrame(customtkinter.CTkFrame):
                 # u_id = get_userid_from_channelid(channel_id, self.auth_key)
                 item_text = f"{i}. {description}"
                 if not self.scrollable_frame.item_exists(channel_id):
-                    self.update_progress()
                     self.scrollable_frame.add_item(item_text, dm={'id': channel_id, 'description': description})
+                    self.update_progress()
 
         self.servers_loaded = True
         self.get_counts_button.configure(state="normal")

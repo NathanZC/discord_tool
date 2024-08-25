@@ -162,6 +162,7 @@ class ScrollableLabelButtonFrame2(customtkinter.CTkScrollableFrame):
             print(f"Opening DM for ID: {channel_id} with description: {dm['description']}")
             u_id = get_userid_from_channelid(channel_id, self.auth)
             response = open_dm_with_userid(u_id, self.auth)
+            print(response)
             self.open_dms.append(channel_id)
             if self.logger:
                 if len(response['recipients']) == 1:
