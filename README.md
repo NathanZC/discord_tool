@@ -17,7 +17,7 @@ pip install -r requirements.txt
 ```
 
 And then run this command to compile it (make sure you have pyinstaller installed):  
-```pyinstaller --onedir --windowed --debug=all --add-data "test_images;test_images" --name DiscordTool gui.py```  
+```pyinstaller --onedir --windowed --debug=bootloader --add-data "test_images;test_images" --icon=icon.ico --name DiscordTool gui.py```  
 
 If you would just like to run the program:  
 ```python gui.py```
