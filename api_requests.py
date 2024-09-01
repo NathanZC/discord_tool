@@ -60,7 +60,11 @@ def get_all_open_dms(auth):
     if response.status_code == 200:
         print('Request successful')
         data = response.json()
-        sorted_dms = sorted(data, key=lambda dm: int(dm['last_message_id']), reverse=True)
+        sorted_dms = sorted(
+            data,
+            key=lambda dm: int(dm['last_message_id']) if dm['last_message_id'] is not None else float('-inf'),
+            reverse=True
+        )
         # pprint.pprint(sorted_dms)
 
         return sorted_dms
