@@ -318,6 +318,7 @@ class SecondFrame(customtkinter.CTkFrame):
                     s = ["Group DM: "]
                     for r in item['recipients']:
                         s.append(f'{r['username']}, ')
+                        s.append(r[)
                     return ''.join(s)
         return None
     #meow
