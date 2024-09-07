@@ -47,7 +47,7 @@ class HomeFrame(customtkinter.CTkFrame):
         self.load_auth_key_from_file()
 
     def submit_auth_key(self):
-        auth_key = self.auth_key_entry.get()
+        auth_key = self.auth_key_entry.get().strip()
         data = get_all_open_dms(auth_key)
         if data is not None:
             self.auth_key = auth_key
