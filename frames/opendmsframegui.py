@@ -3,6 +3,7 @@ from frames.gui_components import ScrollableLabelButtonFrame
 from helpers import *
 from api_requests import *
 
+
 class SecondFrame(customtkinter.CTkFrame):
     def __init__(self, master, auth_key, open_dms, user_data):
         super().__init__(master)
@@ -68,7 +69,8 @@ class SecondFrame(customtkinter.CTkFrame):
         self.tabview.add("Extras")
         self.tabview.tab("Options").grid_columnconfigure(0, weight=2)  # configure grid of individual tabs
         self.tabview.tab("Extras").grid_columnconfigure(0, weight=1)
-        self.checkbox = customtkinter.CTkCheckBox(self.tabview.tab("Options"), text="Close Dm After Delete", onvalue=True, offvalue=False)
+        self.checkbox = customtkinter.CTkCheckBox(self.tabview.tab("Options"), text="Close Dm After Delete",
+                                                  onvalue=True, offvalue=False)
         self.checkbox.grid(row=0, column=0, padx=(20, 10), pady=(10, 10), sticky="s")
         # Add input fields for "before" and "after" dates
         # Add input fields for "before" and "after" dates
@@ -115,12 +117,12 @@ class SecondFrame(customtkinter.CTkFrame):
             # Cancel the job
             self.cancel_job_event(dm)
 
-    def queue_job_event(self, dm):     # start job
+    def queue_job_event(self, dm):  # start job
         self.jobs.append(dm['id'])
         self.append_log(f"{self.id_to_name(dm['id'])} has been added to the queue")
         self.append_log(f"Current jobs:\n{self.format_jobs()}")
 
-    def cancel_job_event(self, dm):     # cancel job
+    def cancel_job_event(self, dm):  # cancel job
         # Handle the cancel job event
         self.append_log(f"Removed {self.id_to_name(dm['id'])} from the queue")
         job_to_remove = None
@@ -187,7 +189,8 @@ class SecondFrame(customtkinter.CTkFrame):
         before_date = before_date if before_date else None
         after_date = after_date if after_date else None
         if before_date and not is_valid_date(before_date):
-            self.append_log("Invalid before date format or time. Please use 'YYYY-MM-DD' and only dates since discord was created.")
+            self.append_log(
+                "Invalid before date format or time. Please use 'YYYY-MM-DD' and only dates since discord was created.")
             if self.dms_loaded:
                 self.get_counts_button.configure(state="enabled")
             self.scrollable_frame.restore_button_states()
@@ -196,7 +199,8 @@ class SecondFrame(customtkinter.CTkFrame):
             self.append_log("Jobs finished")
             return
         if after_date and not is_valid_date(after_date):
-            self.append_log("Invalid after date format or time. Please use 'YYYY-MM-DD' and only dates since discord was created.")
+            self.append_log(
+                "Invalid after date format or time. Please use 'YYYY-MM-DD' and only dates since discord was created.")
             if self.dms_loaded:
                 self.get_counts_button.configure(state="enabled")
             self.scrollable_frame.restore_button_states()
@@ -318,9 +322,9 @@ class SecondFrame(customtkinter.CTkFrame):
                     s = ["Group DM: "]
                     for r in item['recipients']:
                         s.append(f'{r['username']}, ')
-                        s.append(r[)
                     return ''.join(s)
         return None
+
     #meow
     def reset(self):
         # Reset the jobs list
